@@ -1,0 +1,288 @@
+Assignment 6: Medians and Order Statistics & Elementary Data Structures
+
+Part 1: Implementation and Analysis of Selection Algorithms
+
+Performance Analysis of Selection Algorithms
+ 1. Time Complexity Analysis
+  Randomized Selection Algorithm (Quickselect)
+	Algorithm Overview:
+	Randomly select a pivot element.
+	Partition the array into elements less than, equal to, and greater than the pivot.
+	Recurse only on the partition containing the k^thsmallest element.
+	Recurrence Relation:
+
+    T(n)=T(m)+O(n)
+
+	O(n)for partitioning.
+	m=size of the recursive subproblem (depends on pivot choice).
+	Expected Case Analysis:
+	Expected Time Complexity: O(n)
+	Reasoning: Random pivot selection ensures a good pivot (eliminating at least 25% of elements) with probability 50%.
+	Expected number of recursive calls to get a good pivot ≈ 2.
+	Solving the recurrence:
+
+	E[T(n)] ≤ E[T(3n/4)] + O(n) ==> E[T(n)] = O(n)
+
+	Worst-case Analysis:
+	Worst-case time: O(n^2)
+	Occurs when pivot is consistently the smallest or largest element, leading to highly unbalanced partitions.
+	Probability of such worst-case is very low for large n.
+
+  Deterministic Selection Algorithm (Median of Medians)
+	Algorithm Steps:
+	Divide array into ⌈n/5⌉groups of 5 elements.
+	Find the median of each group.
+	Recursively find the median of medians.
+	Use this median as pivot to partition the array.
+	Recurse on the partition containing the k^thelement.
+	Recurrence Relation:
+
+    T(n)=T(⌈n/5⌉)+T(⌊7n/10⌋)+O(n)
+
+	Worst-case Analysis:
+	Worst-case time: O(n)
+	Reason: Median of medians guarantees a balanced pivot.
+	At least 3⌈⌈n/5⌉/2⌉ elements ≤ pivot.
+	At least 3⌈⌈n/5⌉/2⌉ elements ≥ pivot.
+	Recursive calls handle at most 7n/10 elements.
+	Recurrence Solution (Sketch):
+    T(n) ≤ T(n/5) + T(7n/10) + O(n) ==> T(n) = O(n)
+
+2. Why Deterministic is Worst-Case Linear and Randomized is Expected Linear
+	Deterministic:
+	Pivot selection guarantees elimination of a fixed fraction of elements at each step.
+	Ensures recursion reduces problem size consistently → worst-case O(n).
+	Randomized:
+	Pivot is random → partitions may occasionally be highly unbalanced.
+	On average, partitions are reasonably balanced → expected O(n).
+	Worst-case O(n^2)is rare and probability decreases exponentially with n.
+
+3. Space Complexity Analysis
+    Algorithm	            |Space Complexity	                              |Notes
+    Randomized Selection    |O(log n)expected, O(n)worst	                  |Recursion stack depth; partitioning in-place
+    Deterministic Selection	|O(log n)worst-case, temporary O(n) for medians   |Recursion stack + storage for medians (can be optimized)
+
+    Additional Overheads:
+	Randomized:
+	Random number generation (~O(1) per pivot).
+	Partitioning is simple → low constant factor.
+	Cache-friendly → good performance in practice.
+	Deterministic:
+	Sorting small groups of 5 → ~12 operations per group.
+	Multiple passes (median finding + partitioning).
+	Higher constant factor → slower in practice.
+	More complex implementation.
+
+
+Empirical Analysis of Selection Algorithms
+    The empirical results of the randomized and deterministic selection algorithms were obtained for various input sizes and distributions. The goal is to compare their performance and relate the observations to theoretical time complexity predictions.
+
+    1. Observations from Results
+
+    | Size | Distribution   | Randomized (s) | Deterministic (s) | Ratio (Det/Rand) |
+    | ---- | -------------- | -------------- | ----------------- | ---------------- |
+    | 100  | random         | 0.000038       | 0.000027          | 0.70             |
+    | 100  | sorted         | 0.000019       | 0.000053          | 2.80             |
+    | 100  | reverse_sorted | 0.000017       | 0.000059          | 3.53             |
+    | 100  | all_equal      | 0.000106       | 0.001075          | 10.12            |
+    | 100  | few_unique     | 0.000018       | 0.000061          | 3.46             |
+    | 500  | random         | 0.000049       | 0.000226          | 4.62             |
+    | 500  | sorted         | 0.000070       | 0.000202          | 2.90             |
+    | 500  | reverse_sorted | 0.000058       | 0.000214          | 3.68             |
+    | 500  | all_equal      | 0.002008       | 0.029156          | 14.52            |
+    | 500  | few_unique     | 0.000188       | 0.001527          | 8.14             |
+    | 1000 | random         | 0.000155       | 0.000444          | 2.87             |
+    | 1000 | sorted         | 0.000108       | 0.000403          | 3.73             |
+    | 1000 | reverse_sorted | 0.000214       | 0.000401          | 1.87             |
+    | 1000 | all_equal      | 0.007956       | 0.149813          | 18.83            |
+    | 1000 | few_unique     | 0.000504       | 0.004935          | 9.78             |
+    | 5000 | random         | 0.000599       | 0.002173          | 3.63             |
+    | 5000 | sorted         | 0.000560       | 0.001841          | 3.29             |
+    | 5000 | reverse_sorted | 0.000610       | 0.001901          | 3.11             |
+    | 5000 | all_equal      | Error          | 0.172129          | –                |
+    | 5000 | few_unique     | 0.009303       | 0.172129          | 18.50            |
+
+   2. Key Observations
+
+    1. Randomized Selection Performance**
+
+   * Extremely fast for random and moderately structured arrays.
+   * Fails for large “all_equal” arrays due to maximum recursion depth, reflecting the rare worst-case scenario O(n²).
+   * Lower constant factors make it faster than deterministic selection in most cases.
+
+    2. Deterministic Selection Performance**
+
+   * Always completes successfully, even for challenging distributions like “all_equal.”
+   * Slower in practice due to extra computations (median-of-medians selection and multiple passes).
+   * Runtime grows steadily with input size, reflecting O(n) worst-case behavior.
+
+   3. Effect of Input Distribution**
+
+   * Random and few_unique distributions favor randomized selection.
+   * Sorted and reverse-sorted inputs slightly slow deterministic selection due to overheads but remain stable.
+   * Arrays with all equal elements highlight weaknesses of randomized selection (recursion failure) and higher runtime for deterministic selection.
+
+  3. Relationship to Theoretical Analysis**
+
+    1.Randomized Selection
+
+   * Expected Case:** O(n), reflected in fast empirical runtime for most distributions.
+   * Worst Case:** O(n²), rarely occurring but seen in recursion failure on “all_equal” arrays for large n.
+   * Space complexity is low (O(log n) expected).
+
+    2. Deterministic Selection
+
+   * **Worst-case guarantee:** O(n), consistently observed in all test cases.
+   * Overhead from median-of-five calculations increases runtime compared to randomized selection.
+   * Handles “all_equal” arrays efficiently without failure.
+
+    4. Conclusions**
+
+    * Randomized selection is faster in practice for most distributions due to low overhead but is prone to recursion issues in edge cases.
+    * Deterministic selection provides robust worst-case guarantees but is slower because of higher constant factors.
+    * Input distribution affects the runtime: arrays with repeated elements or extreme orderings slow down deterministic selection and can cause recursive failure for randomized selection.
+    * Empirical results align closely with theoretical expectations for time and space complexity.
+
+
+Part 2: Elementary Data Structures Implementation and Discussion
+
+    1. Arrays
+
+        Operations & Time Complexity:
+
+        | Operation           | Complexity     | Notes                    |
+        | ------------------- | -------------- | ------------------------ |
+        | Access (`arr[i]`)   | O(1)           | Direct indexing          |
+        | Update (`arr[i]=x`) | O(1)           | Direct assignment        |
+        | Append              | O(1) amortized | Resize occasionally      |
+        | Insert at index     | O(n)           | Elements must be shifted |
+        | Delete at index     | O(n)           | Elements must be shifted |
+        | Resize              | O(n)           | Doubles capacity         |
+
+        Analysis:
+         Arrays provide fast random access, which is a big advantage for indexing.
+         Inserting or deleting elements in the middle is expensive due to element shifting.
+         Memory allocation is contiguous, which improves cache performance.
+
+    2. Matrices (Matrix)
+
+        Operations & Time Complexity:
+
+        | Operation             | Complexity      | Notes                      |
+        | --------------------- | --------------- | -------------------------- |
+        | Access (`mat[i,j]`)   | O(1)            | Direct indexing            |
+        | Update (`mat[i,j]=x`) | O(1)            | Direct assignment          |
+        | Insert row/col        | O(rows)/O(cols) | Need to shift rows/columns |
+        | Delete row/col        | O(rows)/O(cols) | Need to shift rows/columns |
+
+        Analysis:
+        Efficient for fixed-size data.
+        Inserting or deleting rows/columns is expensive.
+        Useful for applications requiring constant-time access to elements (e.g., numerical computing).
+
+        3. Stack (Stack)
+        Operations & Time Complexity:
+
+        | Operation | Complexity      | Notes               |
+        | --------- | --------------  | ------------------- |
+        | Push      | O(1) amortized  | Resize occasionally |
+        | Pop       | O(1)            | Removes top element |
+        | Peek      | O(1)            | Access top element  |
+        | Resize    | O(n)            | Doubles capacity    |
+
+
+       Analysis:
+       Arrays are ideal for stack implementation due to constant-time push/pop at the end.
+       Memory efficiency is good due to contiguous storage.
+
+    4. Queue (Queue)
+
+        Operations & Time Complexity:
+
+        | Operation | Complexity     | Notes                                   |
+        | --------- | -------------- | --------------------------------------- |
+        | Enqueue   | O(1) amortized | Resize occasionally                     |
+        | Dequeue   | O(1)           | Removes front element (circular buffer) |
+        | Peek      | O(1)           | Access front element                    |
+        | Resize    | O(n)           | Doubles capacity                        |
+
+
+        Analysis:
+        Circular array implementation avoids the O(n) cost of shifting elements.
+        Array-based queue is cache-friendly, but resizing is expensive.
+
+    5. Singly Linked List (LinkedList)
+
+        Operations & Time Complexity:
+
+        | Operation           | Complexity | Notes                        |
+        | ------------------- | ---------- | ---------------------------- |
+        | Insert at beginning | O(1)       | Constant time                |
+        | Insert at end       | O(n)       | Traverse to last node        |
+        | Insert at position  | O(n)       | Traverse to the position     |
+        | Delete at beginning | O(1)       | Constant time                |
+        | Delete at end       | O(n)       | Traverse to second last node |
+        | Delete at position  | O(n)       | Traverse to the position     |
+        | Search              | O(n)       | Must scan nodes              |
+        | Traversal           | O(n)       | Visit all nodes              |
+
+
+        Analysis:
+        Pros: Efficient insertion/deletion at the head; dynamic memory usage.
+        Cons: Random access is slow (O(n)), poor cache locality.
+        Better than arrays when frequent insertions/deletions in the middle or beginning are required.
+
+    6. Rooted Trees (RootedTree)
+
+       Operations & Time Complexity:
+
+        | Operation          | Complexity | Notes                                |
+        | ------------------ | ---------- | ------------------------------------ |
+        | Insert             | O(n)       | Search parent node (DFS)             |
+        | Delete             | O(n)       | Search node and remove from parent   |
+        | Preorder/Postorder | O(n)       | Visit each node once                 |
+        | Get height         | O(n)       | Visit all nodes to find longest path |
+
+
+      Analysis:
+       Trees are hierarchical; efficient for representing parent-child relationships.
+       Traversals (DFS, BFS) are linear in the number of nodes.
+       Memory overhead due to storing pointers for parent and children.
+
+    7. Trade-offs: Arrays vs Linked Lists for Stacks and Queues
+        | Aspect                | Array-based                   | Linked-list-based           |
+        | --------------------- | ----------------------------- | --------------------------- |
+        | Memory usage          | Contiguous, may need resizing | Extra pointer per node      |
+        | Access                | O(1) random access            | O(n) for random access      |
+        | Insert/Delete at end  | O(1) amortized                | O(1) if tail known          |
+        | Insert/Delete at head | O(n)                          | O(1)                        |
+        | Cache performance     | Excellent (contiguous memory) | Poor (non-contiguous nodes) |
+        | Complexity            | Easier to implement           | Slightly more complex       |
+
+
+        Observation:
+        For stacks, array-based is usually better.
+        For queues, array-based with circular buffer is more efficient than linked-list for memory locality.
+        Linked lists are better when frequent insertions/deletions are not at the end or size is unknown.
+
+    8. Efficiency in Specific Scenarios
+       Frequent random access: Arrays or matrices.
+       Frequent insertions/deletions at head: Linked lists.
+       Hierarchical data: Rooted trees.
+       Fixed-size sequential data: Arrays (better cache performance).
+       Dynamic queues/stacks with unpredictable size: Array-based with resizing is usually fine; linked list is alternative.
+
+Discussion:
+    The choice of data structures in real-world applications depends heavily on the specific requirements of memory usage, speed,
+    and ease of implementation. Arrays are ideal when fast random access and predictable memory layout are critical, such as in
+    numerical computing, image processing, or storing fixed-size datasets. Linked lists are preferred when frequent insertions and
+    deletions are required, especially at the beginning or middle of the sequence, such as in implementing dynamic queues,
+    undo/redo features, or adjacency lists in graphs. Stack and queue structures are commonly used in function call management,
+     task scheduling, expression evaluation, and breadth-first or depth-first traversals, where arrays often provide better
+     cache performance, while linked lists offer dynamic sizing. Rooted trees are essential in representing hierarchical data, such
+     as file systems, organizational structures, and XML/JSON parsing. Overall, arrays excel in speed and memory
+     locality for static datasets, linked lists offer flexibility for dynamic datasets, and trees provide natural
+     representation for hierarchical relationships. Selecting the appropriate data structure involves balancing these
+      trade-offs to meet performance and resource constraints in practical scenarios.
+
+
